@@ -1,18 +1,18 @@
-/// <reference types="./node_modules/@types/chrome" />
+/// <reference types="../node_modules/@types/chrome" />
 
 import Action from "./Action";
-import Tab from "./Tab";
 
-const tabs = new Map();
-
-chrome.action.onClicked.addListener(({ id }) => {
-  if (!tabs.has(id)) {
-    tabs.set(id, new Tab(id));
-  }
-
-  const tab = tabs.get(id);
-
-  tab.toggle();
+chrome.action.onClicked.addListener(({ id: tabId }) => {
+  chrome.tabs.sendMessage(tabId, { action: Action.Toggle }, (response) => {
+    if (chrome.runtime.lastError && !response) {
+      chrome.scripting.executeScript({
+        target: {
+          tabId
+        },
+        files: ['Content.js']
+      });
+    }
+  });
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

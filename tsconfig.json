@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
-    "outDir": "./build",
-    "allowJs": true,
-    "target": "ES6",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "moduleResolution": "node",
+    "target": "es6",
+    "types": ["preact"],
     "lib": [
       "ES2020",
       "DOM"
     ]
   },
   "files": [
-    "Background.ts",
-    "Content.ts"
+    "src/Background.ts",
+    "src/Content.tsx"
   ]
 }
