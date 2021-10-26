@@ -5,6 +5,16 @@ export default class Color {
   g: number;
   b: number;
 
+  static fromHex(hexString: string): Color {
+    hexString = hexString.replace('#', '');
+
+    return new Color(
+      parseInt(hexString.slice(0, 2), 16),
+      parseInt(hexString.slice(2, 4), 16),
+      parseInt(hexString.slice(4, 6), 16)
+    );
+  }
+
   constructor(r: number, g: number, b: number) {
     this.r = r;
     this.g = g;

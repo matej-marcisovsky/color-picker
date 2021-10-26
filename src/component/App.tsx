@@ -12,7 +12,8 @@ import Button from "./Button";
 import Preview from "./Preview";
 
 type Props = {
-  onDeactivate: any
+  onDeactivate: any,
+  useEyeDropper: boolean
 };
 
 type State = {
@@ -29,17 +30,23 @@ export default class App extends Component<Props, State> {
   private capturePromise: Promise<void>;
   private debouncedOnScroll: any;
   private debouncedOnResize: any;
+  private eyeDropper: any;
   private isMoving: boolean = false;
 
   constructor(props: Props) {
     super(props);
 
-    this.canvas = new Canvas(window.innerWidth, window.innerHeight);
-    this.debouncedOnScroll = debounce(DEBOUNCE_DELAY, () => this.capture());
-    this.debouncedOnResize = debounce(DEBOUNCE_DELAY, () => this.onResize());
-    this.boundedOnTransitionEnd = this.onTransitionEnd.bind(this);
+    if (!this.props.useEyeDropper) {
+      this.canvas = new Canvas(window.innerWidth, window.innerHeight);
+      this.debouncedOnScroll = debounce(DEBOUNCE_DELAY, () => this.capture());
+      this.debouncedOnResize = debounce(DEBOUNCE_DELAY, () => this.onResize());
+      this.boundedOnTransitionEnd = this.onTransitionEnd.bind(this);
 
-    this.capture();
+      this.capture();
+    } else {
+      // TODO EyeDropper type support
+      this.eyeDropper = new window['EyeDropper']();
+    }
 
     this.state = {
       color: new Color(0, 0, 0),
@@ -48,13 +55,17 @@ export default class App extends Component<Props, State> {
   }
 
   componentDidMount() {
-    window.addEventListener('scroll', this.debouncedOnScroll);
-    window.addEventListener('resize', this.debouncedOnResize);
+    if (!this.props.useEyeDropper) {
+      window.addEventListener('scroll', this.debouncedOnScroll);
+      window.addEventListener('resize', this.debouncedOnResize);
+    }
   }
 
   componentWillUnmount() {
-    window.removeEventListener('scroll', this.debouncedOnScroll);
-    window.removeEventListener('resize', this.debouncedOnResize);
+    if (!this.props.useEyeDropper) {
+      window.removeEventListener('scroll', this.debouncedOnScroll);
+      window.removeEventListener('resize', this.debouncedOnResize);
+    }
   }
 
   render() {
@@ -67,7 +78,7 @@ export default class App extends Component<Props, State> {
           width: '100vw',
           height: '100vh',
           zIndex: '9999',
-          cursor: 'crosshair'
+          cursor: this.props.useEyeDropper ? 'auto' : 'crosshair'
         }}
         onClick={(event) => this.onClick(event)}
         onMouseDown={(event) => this.onMouseDownOrUp(event, true)}
@@ -80,6 +91,9 @@ export default class App extends Component<Props, State> {
           <Button style={{ width: '7ch' }} onClick={(event) => this.onCopyClick(event, this.state.color.toHex())}>{this.state.color.toHex()}</Button>
           <Button style={{ width: '18ch' }} onClick={(event) => this.onCopyClick(event, this.state.color.toRgb())}>{this.state.color.toRgb()}</Button>
           <div>
+            {this.props.useEyeDropper && (
+              <Button style={{ fontSize: '24px', marginRight: '8px' }} onClick={(event) => this.onEyeDropper(event)}>{'\u{022b9}'}</Button>
+            )}
             <Button style={{ fontSize: '24px', marginRight: '8px' }} onClick={(event) => this.onMove(event)}>{'\u{021c5}'}</Button>
             <Button style={{ fontSize: '24px' }} onClick={this.props.onDeactivate}>{'\u{02a2f}'}</Button>
           </div>
@@ -91,13 +105,15 @@ export default class App extends Component<Props, State> {
   onClick(event) {
     event.preventDefault();
 
-    const { base: barElm } = this.barRef?.current;
+    if (!this.props.useEyeDropper) {
+      const { base: barElm } = this.barRef?.current;
 
-    if (!barElm || barElm === event.target || barElm.contains(event.target as Node)) {
-      return;
+      if (!barElm || barElm === event.target || barElm.contains(event.target as Node)) {
+        return;
+      }
+
+      this.getColor(event.clientX, event.clientY);
     }
-
-    this.getColor(event.clientX, event.clientY);
   }
 
   onCopyClick(event, text: string) {
@@ -106,14 +122,32 @@ export default class App extends Component<Props, State> {
     navigator.clipboard.writeText(text);
   }
 
+  async onEyeDropper(event) {
+    event.preventDefault();
+
+    const color = await this.eyeDropper.open();
+
+    if (!color || !color.sRGBHex) {
+      return;
+    }
+
+    this.setState({
+      color: Color.fromHex(color.sRGBHex)
+    });
+  }
+
   onMouseDownOrUp(event, isMoving: boolean) {
+    if (this.props.useEyeDropper) {
+      return;
+    }
+
     event.preventDefault();
 
     this.isMoving = isMoving;
   }
 
   onMouseMove(event) {
-    if (!this.isMoving) {
+    if (this.props.useEyeDropper || !this.isMoving) {
       return;
     }
 
@@ -131,7 +165,9 @@ export default class App extends Component<Props, State> {
       return;
     }
 
-    barElm.addEventListener('transitionend', this.boundedOnTransitionEnd);
+    if (!this.props.useEyeDropper) {
+      barElm.addEventListener('transitionend', this.boundedOnTransitionEnd);
+    }
 
     this.setState({
       isDown: !this.state.isDown

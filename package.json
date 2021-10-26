@@ -6,7 +6,7 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^20.0.0",
     "@rollup/plugin-node-resolve": "^13.0.4",
-    "@types/chrome": "0.0.154",
+    "@types/chrome": "0.0.161",
     "preact": "^10.5.14",
     "rollup": "^2.56.3",
     "rollup-plugin-typescript2": "^0.30.0",

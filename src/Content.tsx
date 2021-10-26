@@ -6,6 +6,8 @@ import Action from "./Action";
 
 import App from "./component/App";
 
+const useEyeDropper = 'EyeDropper' in window;
+
 let active = false;
 let placeholder = null;
 let root = null;
@@ -14,7 +16,7 @@ function activate() {
   active = true;
   placeholder = document.createElement('div');
   document.body.appendChild(placeholder);
-  root = render(<App onDeactivate={deactivate}/>, placeholder);
+  root = render(<App onDeactivate={deactivate} useEyeDropper/>, placeholder);
 }
 
 function deactivate() {
